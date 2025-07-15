@@ -1,0 +1,1494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Sales Headcount Projection Model - Plan and project sales team headcount requirements across multiple countries">
+    <meta name="author" content="Sales Operations">
+    <title>Sales Headcount Projection Model</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-color: #4CAF50;
+            --primary-hover: #45a049;
+            --text-primary: #333;
+            --text-secondary: #666;
+            --text-muted: #999;
+            --bg-primary: #ffffff;
+            --bg-secondary: #f5f5f5;
+            --bg-tertiary: #f9f9f9;
+            --border-color: #ddd;
+            --border-radius: 6px;
+            --box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            --spacing-xs: 5px;
+            --spacing-sm: 10px;
+            --spacing-md: 15px;
+            --spacing-lg: 20px;
+            --spacing-xl: 30px;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            font-size: 16px;
+            line-height: 1.6;
+            color: var(--text-primary);
+            background-color: var(--bg-secondary);
+        }
+
+        h1, h2, h3 {
+            margin-bottom: var(--spacing-md);
+            font-weight: 600;
+            line-height: 1.2;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            border-bottom: 3px solid var(--primary-color);
+            padding-bottom: var(--spacing-sm);
+            margin-bottom: var(--spacing-xl);
+        }
+
+        h2 {
+            font-size: 1.8rem;
+            color: var(--text-primary);
+        }
+
+        h3 {
+            font-size: 1.3rem;
+            color: var(--primary-color);
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: var(--spacing-lg);
+            background-color: var(--bg-primary);
+            border-radius: 12px;
+            box-shadow: var(--box-shadow);
+        }
+
+        .section {
+            margin-bottom: 40px;
+            padding: var(--spacing-lg);
+            background-color: var(--bg-tertiary);
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .subsection {
+            background-color: var(--bg-primary);
+            padding: var(--spacing-md);
+            border-radius: var(--border-radius);
+            margin-bottom: var(--spacing-md);
+            border: 1px solid #e0e0e0;
+        }
+
+        .subsection h3 {
+            margin-top: 0;
+            margin-bottom: var(--spacing-md);
+        }
+
+        .parameter-grid {
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: var(--spacing-lg);
+            align-items: center;
+            margin-bottom: var(--spacing-md);
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: var(--spacing-lg);
+            margin-bottom: var(--spacing-xl);
+        }
+
+        .month-inputs {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: var(--spacing-sm);
+            margin-top: var(--spacing-lg);
+        }
+
+        .parameter-label {
+            font-weight: 600;
+            color: #555;
+            font-size: 14px;
+        }
+
+        .parameter-input {
+            max-width: 200px;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            color: #555;
+            margin-bottom: var(--spacing-xs);
+            font-size: 14px;
+        }
+
+        input[type="number"],
+        input[type="text"],
+        select {
+            width: 100%;
+            padding: var(--spacing-sm);
+            border: 2px solid var(--border-color);
+            border-radius: var(--border-radius);
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+            background-color: var(--bg-primary);
+        }
+
+        input:focus,
+        select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1);
+        }
+
+        input:disabled {
+            background-color: #f0f0f0;
+            cursor: not-allowed;
+            color: var(--text-muted);
+            opacity: 0.6;
+        }
+
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: var(--border-radius);
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        button:hover {
+            background-color: var(--primary-hover);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+        }
+
+        button:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 4px rgba(76, 175, 80, 0.3);
+        }
+
+        button.calculate-btn {
+            width: 100%;
+            margin: var(--spacing-lg) 0;
+            font-size: 18px;
+            padding: 16px 32px;
+        }
+
+        .tab-container {
+            display: flex;
+            gap: var(--spacing-sm);
+            margin-bottom: var(--spacing-lg);
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .tab {
+            padding: var(--spacing-sm) var(--spacing-lg);
+            cursor: pointer;
+            border: none;
+            background: none;
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .tab:hover {
+            color: var(--primary-color);
+        }
+
+        .tab.active {
+            color: var(--primary-color);
+        }
+
+        .tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background-color: var(--primary-color);
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: var(--spacing-lg);
+            font-size: 14px;
+            background-color: var(--bg-primary);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        th,
+        td {
+            padding: 12px;
+            text-align: center;
+            border: 1px solid var(--border-color);
+        }
+
+        th {
+            background-color: var(--primary-color);
+            color: white;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        tr:nth-child(even) {
+            background-color: var(--bg-tertiary);
+        }
+
+        tr:hover {
+            background-color: #f0f8ff;
+        }
+
+        .country-header {
+            background-color: #e8f5e9;
+            font-weight: 600;
+        }
+
+        .total-row {
+            background-color: #fff3cd;
+            font-weight: 700;
+        }
+
+        .metric-card {
+            background-color: var(--bg-primary);
+            padding: var(--spacing-lg);
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .metric-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .metric-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin: var(--spacing-sm) 0;
+        }
+
+        .metric-label {
+            color: var(--text-secondary);
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .warning {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: var(--spacing-md);
+            border-radius: var(--border-radius);
+            margin-top: var(--spacing-lg);
+        }
+
+        .info {
+            background-color: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+            padding: var(--spacing-md);
+            border-radius: var(--border-radius);
+            margin-bottom: var(--spacing-md);
+        }
+
+        .country-flag {
+            font-size: 20px;
+            margin-right: 8px;
+        }
+
+        .month-input-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .month-input-group label {
+            font-size: 12px;
+            margin-bottom: 3px;
+        }
+
+        .month-input-group input {
+            padding: 6px;
+            font-size: 14px;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 1200px) {
+            .container {
+                max-width: 100%;
+                margin: var(--spacing-sm);
+                padding: var(--spacing-md);
+            }
+
+            .parameter-grid {
+                grid-template-columns: 1fr;
+                gap: var(--spacing-sm);
+            }
+
+            .month-inputs {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 1.8rem;
+            }
+
+            h2 {
+                font-size: 1.4rem;
+            }
+
+            .tab {
+                padding: var(--spacing-xs) var(--spacing-sm);
+                font-size: 14px;
+            }
+
+            .month-inputs {
+                grid-template-columns: repeat(3, 1fr);
+            }
+
+            table {
+                font-size: 12px;
+            }
+
+            th, td {
+                padding: 8px 4px;
+            }
+
+            .metric-value {
+                font-size: 24px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .month-inputs {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .summary-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .tab-container {
+                flex-wrap: wrap;
+            }
+
+            .tab {
+                flex: 1 0 100%;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Sales Headcount Projection Model</h1>
+            <div class="info">
+                <strong>Purpose:</strong> This tool helps sales operations teams project headcount requirements based on revenue targets, conversion rates, and team performance metrics across multiple countries.
+            </div>
+        </header>
+
+        <main>
+            <section class="section">
+                <h2>Current Date Setting</h2>
+                <div style="display: flex; gap: 20px; align-items: center; flex-wrap: wrap;">
+                    <div>
+                        <label for="currentMonth">Current Month</label>
+                        <select id="currentMonth">
+                            <option value="0">January</option>
+                            <option value="1">February</option>
+                            <option value="2">March</option>
+                            <option value="3">April</option>
+                            <option value="4">May</option>
+                            <option value="5">June</option>
+                            <option value="6">July</option>
+                            <option value="7">August</option>
+                            <option value="8">September</option>
+                            <option value="9">October</option>
+                            <option value="10">November</option>
+                            <option value="11">December</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="currentYear">Current Year</label>
+                        <select id="currentYear">
+                            <option value="2024">2024</option>
+                            <option value="2025" selected>2025</option>
+                            <option value="2026">2026</option>
+                            <option value="2027">2027</option>
+                        </select>
+                    </div>
+                    <div style="margin-left: 20px; padding: 10px; background-color: #e8f5e9; border-radius: 6px;">
+                        <strong>Note:</strong> Current headcount reflects your team size as of <span id="currentDateDisplay">January 2025</span>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section">
+                <h2>Country-Specific Parameters</h2>
+                <nav class="tab-container">
+                    <button class="tab active" onclick="switchParameterTab('MY')">
+                        <span class="country-flag">🇲🇾</span>Malaysia
+                    </button>
+                    <button class="tab" onclick="switchParameterTab('PH')">
+                        <span class="country-flag">🇵🇭</span>Philippines
+                    </button>
+                    <button class="tab" onclick="switchParameterTab('TH')">
+                        <span class="country-flag">🇹🇭</span>Thailand
+                    </button>
+                </nav>
+
+                <div id="MY-params" class="tab-content active">
+                    <div class="subsection">
+                        <h3>Sales Metrics - Malaysia</h3>
+                        <div class="parameter-grid">
+                            <div class="parameter-label">Average ARR per Deal ($)</div>
+                            <div class="parameter-input">
+                                <input type="number" id="arrMY" value="50000" min="0">
+                            </div>
+                        </div>
+                        <div class="parameter-grid">
+                            <div class="parameter-label">Sales Consultant Monthly Quota (Opportunities)</div>
+                            <div class="parameter-input">
+                                <input type="number" id="sdrQuotaMY" value="20" min="1">
+                            </div>
+                        </div>
+                        <div class="parameter-grid">
+                            <div class="parameter-label">Business Consultant Monthly Quota (Deals)</div>
+                            <div class="parameter-input">
+                                <input type="number" id="aeQuotaMY" value="4" min="1">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="subsection">
+                        <h3>Current Headcount - Malaysia</h3>
+                        <div class="parameter-grid">
+                            <div class="parameter-label">Current Sales Consultants (100% Ramped)</div>
+                            <div class="parameter-input">
+                                <input type="number" id="currentSCMY" value="0" min="0">
+                            </div>
+                        </div>
+                        <div class="parameter-grid">
+                            <div class="parameter-label">Current Business Consultants (100% Ramped)</div>
+                            <div class="parameter-input">
+                                <input type="number" id="currentBCMY" value="0" min="0">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="subsection">
+                        <h3>Conversion Rates - Malaysia</h3>
+                        <div class="parameter-grid">
+                            <div class="parameter-label">SC Lead to Opportunity Rate (%)</div>
+                            <div class="parameter-input">
+                                <input type="number" id="leadToOppRateMY" value="20" min="0" max="100" step="0.1">
+                            </div>
+                        </div>
+                        <div class="parameter-grid">
+                            <div class="parameter-label">BC Meeting to Win Rate (%)</div>
+                            <div class="parameter-input">
+                                <input type="number" id="meetingToWinRateMY" value="25" min="0" max="100" step="0.1">
+                            </div>
+                        </div>
+                        <div class="parameter-grid">
+                            <div class="parameter-label">Opportunities Close Same Month (%)</div>
+                            <div class="parameter-input">
+                                <input type="number" id="closeSameMonthMY" value="70" min="0" max="100" step="1">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="subsection">
+                        <h3>Team Management - Malaysia</h3>
+                        <div class="parameter-grid">
+                            <div class="parameter-label">Monthly Attrition Rate (%)</div>
+                            <div class="parameter-input">
+                                <input type="number" id="attritionRateMY" value="5" min="0" max="100" step="0.1">
+                            </div>
+                        </div>
+                        <div class="parameter-grid">
+                            <div class="parameter-label">Hiring Lead Time (days)</div>
+                            <div class="parameter-input">
+                                <input type="number" id="hiringLeadTimeMY" value="30" min="0" max="180">
+                            </div>
+                        </div>
+                        <div class="parameter-grid">
+                            <div class="parameter-label">Ramp Period - Month 1 (% of quota)</div>
+                            <div class="parameter-input">
+                                <input type="number" id="ramp1MY" value="0" min="0" max="100" step="5">
+                            </div>
+                        </div>
+                        <div class="parameter-grid">
+                            <div class="parameter-label">Ramp Period - Month 2 (% of quota)</div>
+                            <div class="parameter-input">
+                                <input type="number" id="ramp2MY" value="50" min="0" max="100" step="5">
+                            </div>
+                        </div>
+                        <div class="parameter-grid">
+                            <div class="parameter-label">Ramp Period - Month 3 (% of quota)</div>
+                            <div class="parameter-input">
+                                <input type="number" id="ramp3MY" value="100" min="0" max="100" step="5">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="subsection">
+                        <h3>Monthly Deal Targets - Malaysia</h3>
+                        <div style="margin-bottom: 15px;">
+                            <label class="current-year-label" style="font-weight: 600; color: #555; margin-right: 10px; display: inline;">Current Year (2025):</label>
+                        </div>
+                        <div class="month-inputs" id="targetsMY"></div>
+                        <div style="margin: 20px 0;">
+                            <label class="next-year-label" style="font-weight: 600; color: #555; margin-right: 10px; display: inline;">Next Year (2026):</label>
+                        </div>
+                        <div class="month-inputs" id="targetsMYNext"></div>
+                    </div>
+                </div>
+
+                <div id="PH-params" class="tab-content">
+                    <div class="subsection">
+                        <h3>Sales Metrics - Philippines</h3>
+                        <div class="parameter-grid">
+                            <div class="parameter-label">Average ARR per Deal ($)</div>
+                            <div class="parameter-input">
+                                <input type="number" id="arrPH" value="40000" min="0">
+                            </div>
+                        </div>
+                        <div class="parameter-grid">
+                            <div class="parameter-label">Sales Consultant Monthly Quota (Opportunities)</div>
+                            <div class="parameter-input">
+                                <input type="number" id="sdrQuotaPH" value="25" min="1">
+                            </div>
+                        </div>
+                        <div class="parameter-grid">
+                            <div class="parameter-label">Business Consultant Monthly Quota (Deals)</div>
+                            <div class="parameter-input">
+                                <input type="number" id="aeQuotaPH" value="5" min="1">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="subsection">
+                        <h3>Current Headcount - Philippines</h3>
+                        <div class="parameter-grid">
+                            <div class="parameter-label">Current Sales Consultants (100% Ramped)</div>
+                            <div class="parameter-input">
+                                <input type="number" id="currentSCPH" value="0" min="0">
+                            </div>
+                        </div>
+                        <div class="parameter-grid">
+                            <div class="parameter-label">Current Business Consultants (100% Ramped)</div>
+                            <div class="parameter-input">
+                                <input type="number" id="currentBCPH" value="0" min="0">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="subsection">
+                        <h3>Conversion Rates - Philippines</h3>
+                        <div class="parameter-grid">
+                            <div class="parameter-label">SC Lead to Opportunity Rate (%)</div>
+                            <div class="parameter-input">
+                                <input type="number" id="leadToOppRatePH" value="22" min="0" max="100" step="0.1">
+                            </div>
+                        </div>
+                        <div class="parameter-grid">
+                            <div class="parameter-label">BC Meeting to Win Rate (%)</div>
+                            <div class="parameter-input">
+                                <input type="number" id="meetingToWinRatePH" value="28" min="0" max="100" step="0.1">
+                            </div>
+                        </div>
+                        <div class="parameter-grid">
+                            <div class="parameter-label">Opportunities Close Same Month (%)</div>
+                            <div class="parameter-input">
+                                <input type="number" id="closeSameMonthPH" value="75" min="0" max="100" step="1">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="subsection">
+                        <h3>Team Management - Philippines</h3>
+                        <div class="parameter-grid">
+                            <div class="parameter-label">Monthly Attrition Rate (%)</div>
+                            <div class="parameter-input">
+                                <input type="number" id="attritionRatePH" value="6" min="0" max="100" step="0.1">
+                            </div>
+                        </div>
+                        <div class="parameter-grid">
+                            <div class="parameter-label">Hiring Lead Time (days)</div>
+                            <div class="parameter-input">
+                                <input type="number" id="hiringLeadTimePH" value="30" min="0" max="180">
+                            </div>
+                        </div>
+                        <div class="parameter-grid">
+                            <div class="parameter-label">Ramp Period - Month 1 (% of quota)</div>
+                            <div class="parameter-input">
+                                <input type="number" id="ramp1PH" value="0" min="0" max="100" step="5">
+                            </div>
+                        </div>
+                        <div class="parameter-grid">
+                            <div class="parameter-label">Ramp Period - Month 2 (% of quota)</div>
+                            <div class="parameter-input">
+                                <input type="number" id="ramp2PH" value="50" min="0" max="100" step="5">
+                            </div>
+                        </div>
+                        <div class="parameter-grid">
+                            <div class="parameter-label">Ramp Period - Month 3 (% of quota)</div>
+                            <div class="parameter-input">
+                                <input type="number" id="ramp3PH" value="100" min="0" max="100" step="5">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="subsection">
+                        <h3>Monthly Deal Targets - Philippines</h3>
+                        <div style="margin-bottom: 15px;">
+                            <label class="current-year-label" style="font-weight: 600; color: #555; margin-right: 10px; display: inline;">Current Year (2025):</label>
+                        </div>
+                        <div class="month-inputs" id="targetsPH"></div>
+                        <div style="margin: 20px 0;">
+                            <label class="next-year-label" style="font-weight: 600; color: #555; margin-right: 10px; display: inline;">Next Year (2026):</label>
+                        </div>
+                        <div class="month-inputs" id="targetsPHNext"></div>
+                    </div>
+                </div>
+
+                <div id="TH-params" class="tab-content">
+                    <div class="subsection">
+                        <h3>Sales Metrics - Thailand</h3>
+                        <div class="parameter-grid">
+                            <div class="parameter-label">Average ARR per Deal ($)</div>
+                            <div class="parameter-input">
+                                <input type="number" id="arrTH" value="45000" min="0">
+                            </div>
+                        </div>
+                        <div class="parameter-grid">
+                            <div class="parameter-label">Sales Consultant Monthly Quota (Opportunities)</div>
+                            <div class="parameter-input">
+                                <input type="number" id="sdrQuotaTH" value="22" min="1">
+                            </div>
+                        </div>
+                        <div class="parameter-grid">
+                            <div class="parameter-label">Business Consultant Monthly Quota (Deals)</div>
+                            <div class="parameter-input">
+                                <input type="number" id="aeQuotaTH" value="4" min="1">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="subsection">
+                        <h3>Current Headcount - Thailand</h3>
+                        <div class="parameter-grid">
+                            <div class="parameter-label">Current Sales Consultants (100% Ramped)</div>
+                            <div class="parameter-input">
+                                <input type="number" id="currentSCTH" value="0" min="0">
+                            </div>
+                        </div>
+                        <div class="parameter-grid">
+                            <div class="parameter-label">Current Business Consultants (100% Ramped)</div>
+                            <div class="parameter-input">
+                                <input type="number" id="currentBCTH" value="0" min="0">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="subsection">
+                        <h3>Conversion Rates - Thailand</h3>
+                        <div class="parameter-grid">
+                            <div class="parameter-label">SC Lead to Opportunity Rate (%)</div>
+                            <div class="parameter-input">
+                                <input type="number" id="leadToOppRateTH" value="18" min="0" max="100" step="0.1">
+                            </div>
+                        </div>
+                        <div class="parameter-grid">
+                            <div class="parameter-label">BC Meeting to Win Rate (%)</div>
+                            <div class="parameter-input">
+                                <input type="number" id="meetingToWinRateTH" value="23" min="0" max="100" step="0.1">
+                            </div>
+                        </div>
+                        <div class="parameter-grid">
+                            <div class="parameter-label">Opportunities Close Same Month (%)</div>
+                            <div class="parameter-input">
+                                <input type="number" id="closeSameMonthTH" value="65" min="0" max="100" step="1">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="subsection">
+                        <h3>Team Management - Thailand</h3>
+                        <div class="parameter-grid">
+                            <div class="parameter-label">Monthly Attrition Rate (%)</div>
+                            <div class="parameter-input">
+                                <input type="number" id="attritionRateTH" value="4" min="0" max="100" step="0.1">
+                            </div>
+                        </div>
+                        <div class="parameter-grid">
+                            <div class="parameter-label">Hiring Lead Time (days)</div>
+                            <div class="parameter-input">
+                                <input type="number" id="hiringLeadTimeTH" value="30" min="0" max="180">
+                            </div>
+                        </div>
+                        <div class="parameter-grid">
+                            <div class="parameter-label">Ramp Period - Month 1 (% of quota)</div>
+                            <div class="parameter-input">
+                                <input type="number" id="ramp1TH" value="0" min="0" max="100" step="5">
+                            </div>
+                        </div>
+                        <div class="parameter-grid">
+                            <div class="parameter-label">Ramp Period - Month 2 (% of quota)</div>
+                            <div class="parameter-input">
+                                <input type="number" id="ramp2TH" value="50" min="0" max="100" step="5">
+                            </div>
+                        </div>
+                        <div class="parameter-grid">
+                            <div class="parameter-label">Ramp Period - Month 3 (% of quota)</div>
+                            <div class="parameter-input">
+                                <input type="number" id="ramp3TH" value="100" min="0" max="100" step="5">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="subsection">
+                        <h3>Monthly Deal Targets - Thailand</h3>
+                        <div style="margin-bottom: 15px;">
+                            <label class="current-year-label" style="font-weight: 600; color: #555; margin-right: 10px; display: inline;">Current Year (2025):</label>
+                        </div>
+                        <div class="month-inputs" id="targetsTH"></div>
+                        <div style="margin: 20px 0;">
+                            <label class="next-year-label" style="font-weight: 600; color: #555; margin-right: 10px; display: inline;">Next Year (2026):</label>
+                        </div>
+                        <div class="month-inputs" id="targetsTHNext"></div>
+                    </div>
+                </div>
+            </section>
+
+            <button onclick="calculateProjections()" class="calculate-btn">
+                Calculate Projections
+            </button>
+
+            <div id="results" style="display: none;">
+                <section class="section">
+                    <h2>Summary Metrics</h2>
+                    <div class="summary-grid" id="summaryMetrics"></div>
+                </section>
+
+                <section class="section">
+                    <h2>Monthly Requirements</h2>
+                    <div style="overflow-x: auto;">
+                        <table id="monthlyRequirements"></table>
+                    </div>
+                </section>
+
+                <section class="section">
+                    <h2>Headcount Plan with Ramp & Attrition</h2>
+                    <div style="overflow-x: auto;">
+                        <table id="headcountPlan"></table>
+                    </div>
+                </section>
+
+                <section class="section">
+                    <h2>Hiring Schedule</h2>
+                    <div style="overflow-x: auto;">
+                        <table id="hiringSchedule"></table>
+                    </div>
+                </section>
+
+                <section class="section">
+                    <h2>Requisition Timeline</h2>
+                    <div class="warning">
+                        <strong>Important:</strong> This table shows when to submit requisitions to your hiring team. The dates account for hiring lead time to ensure new hires start when needed.
+                    </div>
+                    <div style="overflow-x: auto;">
+                        <table id="requisitionTimeline"></table>
+                    </div>
+                </section>
+            </div>
+        </main>
+
+        <footer style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #e0e0e0; text-align: center; color: #666;">
+            <p>Sales Headcount Projection Model &copy; 2025 | Built for Sales Operations Teams</p>
+        </footer>
+    </div>
+
+    <script>
+        // Configuration
+        const APP_CONFIG = {
+            months: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+            monthsFull: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
+            countries: ['MY', 'PH', 'TH'],
+            countryNames: {
+                'MY': 'Malaysia',
+                'PH': 'Philippines',
+                'TH': 'Thailand'
+            },
+            countryFlags: {
+                'MY': '🇲🇾',
+                'PH': '🇵🇭',
+                'TH': '🇹🇭'
+            }
+        };
+
+        // Initialize application
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set current date
+            const today = new Date();
+            document.getElementById('currentMonth').value = today.getMonth();
+            document.getElementById('currentYear').value = today.getFullYear();
+            
+            // Update displays
+            updateCurrentDateDisplay();
+            initializeTargets();
+            
+            // Add event listeners
+            document.getElementById('currentMonth').addEventListener('change', function() {
+                updateCurrentDateDisplay();
+                // Update all country targets when date changes
+                APP_CONFIG.countries.forEach(country => {
+                    updateMonthlyTargets(country);
+                });
+            });
+            
+            document.getElementById('currentYear').addEventListener('change', function() {
+                updateCurrentDateDisplay();
+                // Update all country targets when date changes
+                APP_CONFIG.countries.forEach(country => {
+                    updateMonthlyTargets(country);
+                });
+            });
+        });
+
+        function updateCurrentDateDisplay() {
+            const month = document.getElementById('currentMonth').value;
+            const year = document.getElementById('currentYear').value;
+            document.getElementById('currentDateDisplay').textContent = 
+                APP_CONFIG.monthsFull[month] + ' ' + year;
+            
+            // Update year labels in all sections
+            const currentYearLabels = document.querySelectorAll('.current-year-label');
+            const nextYearLabels = document.querySelectorAll('.next-year-label');
+            
+            currentYearLabels.forEach(label => {
+                label.textContent = 'Current Year (' + year + '):';
+            });
+            
+            nextYearLabels.forEach(label => {
+                label.textContent = 'Next Year (' + (parseInt(year) + 1) + '):';
+            });
+        }
+
+        function initializeTargets() {
+            APP_CONFIG.countries.forEach(country => {
+                updateMonthlyTargets(country);
+            });
+        }
+
+        function updateMonthlyTargets(country) {
+            const currentMonth = parseInt(document.getElementById('currentMonth').value);
+            const currentYear = parseInt(document.getElementById('currentYear').value);
+            
+            // Update current year targets
+            const container = document.getElementById('targets' + country);
+            container.innerHTML = '';
+            
+            APP_CONFIG.months.forEach((month, index) => {
+                const div = document.createElement('div');
+                div.className = 'month-input-group';
+                
+                // Check if this month is in the past for current year
+                const isPastMonth = index < currentMonth;
+                
+                const label = document.createElement('label');
+                label.textContent = month + ' ' + currentYear;
+                if (isPastMonth) {
+                    label.style.color = '#999';
+                }
+                
+                const input = document.createElement('input');
+                input.type = 'number';
+                input.id = 'target' + country + index;
+                input.value = isPastMonth ? '0' : (10 + index).toString();
+                input.min = '0';
+                
+                if (isPastMonth) {
+                    input.disabled = true;
+                }
+                
+                div.appendChild(label);
+                div.appendChild(input);
+                container.appendChild(div);
+            });
+            
+            // Update next year targets
+            const containerNext = document.getElementById('targets' + country + 'Next');
+            if (containerNext) {
+                containerNext.innerHTML = '';
+                
+                APP_CONFIG.months.forEach((month, index) => {
+                    const div = document.createElement('div');
+                    div.className = 'month-input-group';
+                    
+                    const label = document.createElement('label');
+                    label.textContent = month + ' ' + (currentYear + 1);
+                    
+                    const input = document.createElement('input');
+                    input.type = 'number';
+                    input.id = 'targetNext' + country + index;
+                    input.value = (15 + index).toString();
+                    input.min = '0';
+                    
+                    div.appendChild(label);
+                    div.appendChild(input);
+                    containerNext.appendChild(div);
+                });
+            }
+        }
+
+        function switchParameterTab(country) {
+            // Update tab states
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            // Activate selected tab
+            event.target.closest('.tab').classList.add('active');
+            document.getElementById(country + '-params').classList.add('active');
+        }
+
+        function getMonthLabels() {
+            const currentMonth = parseInt(document.getElementById('currentMonth').value);
+            const currentYear = parseInt(document.getElementById('currentYear').value);
+            const labels = [];
+            
+            for (let i = 0; i < 12; i++) {
+                const monthIndex = (currentMonth + i) % 12;
+                const yearOffset = Math.floor((currentMonth + i) / 12);
+                const year = currentYear + yearOffset;
+                labels.push(APP_CONFIG.months[monthIndex] + ' ' + year);
+            }
+            
+            return labels;
+        }
+
+        function calculateProjections() {
+            try {
+                // Show loading state
+                const button = document.querySelector('button.calculate-btn');
+                const originalText = button.textContent;
+                button.innerHTML = 'Calculating<span class="loading"></span>';
+                button.disabled = true;
+
+                // Gather data
+                const data = gatherInputData();
+                console.log('Data collected:', data);
+                
+                // Calculate projections
+                const projections = calculateRequirements(data);
+                console.log('Projections calculated:', projections);
+                
+                // Calculate headcount plan
+                const headcountPlan = calculateHeadcountWithRamp(projections, data);
+                console.log('Headcount plan calculated:', headcountPlan);
+                
+                // Display results
+                displayResults(projections, headcountPlan, data);
+                document.getElementById('results').style.display = 'block';
+                
+                // Scroll to results
+                setTimeout(() => {
+                    document.getElementById('results').scrollIntoView({ 
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }, 100);
+
+                // Reset button state
+                button.innerHTML = originalText;
+                button.disabled = false;
+
+            } catch (error) {
+                console.error('Error calculating projections:', error);
+                console.error('Error stack:', error.stack);
+                alert('An error occurred while calculating projections. Please check your inputs and try again.');
+                
+                // Reset button state
+                const button = document.querySelector('button.calculate-btn');
+                button.innerHTML = 'Calculate Projections';
+                button.disabled = false;
+            }
+        }
+
+        function gatherInputData() {
+            const data = {
+                currentMonth: parseInt(document.getElementById('currentMonth').value),
+                currentYear: parseInt(document.getElementById('currentYear').value),
+                countries: {}
+            };
+
+            APP_CONFIG.countries.forEach(country => {
+                data.countries[country] = {
+                    arrPerDeal: parseInt(document.getElementById('arr' + country).value),
+                    sdrQuota: parseInt(document.getElementById('sdrQuota' + country).value),
+                    aeQuota: parseInt(document.getElementById('aeQuota' + country).value),
+                    leadToOppRate: parseFloat(document.getElementById('leadToOppRate' + country).value) / 100,
+                    meetingToWinRate: parseFloat(document.getElementById('meetingToWinRate' + country).value) / 100,
+                    closeSameMonth: parseFloat(document.getElementById('closeSameMonth' + country).value) / 100,
+                    attritionRate: parseFloat(document.getElementById('attritionRate' + country).value) / 100,
+                    hiringLeadTime: parseInt(document.getElementById('hiringLeadTime' + country).value),
+                    currentSC: parseInt(document.getElementById('currentSC' + country).value) || 0,
+                    currentBC: parseInt(document.getElementById('currentBC' + country).value) || 0,
+                    rampFactors: [
+                        parseFloat(document.getElementById('ramp1' + country).value) / 100,
+                        parseFloat(document.getElementById('ramp2' + country).value) / 100,
+                        parseFloat(document.getElementById('ramp3' + country).value) / 100
+                    ],
+                    targetsByYearMonth: {} // Store targets by year and month
+                };
+
+                // Gather current year targets
+                for (let i = 0; i < 12; i++) {
+                    const input = document.getElementById('target' + country + i);
+                    const targetValue = input.disabled ? 0 : (parseInt(input.value) || 0);
+                    const key = data.currentYear + '-' + i;
+                    data.countries[country].targetsByYearMonth[key] = targetValue;
+                }
+                
+                // Gather next year targets
+                for (let i = 0; i < 12; i++) {
+                    const input = document.getElementById('targetNext' + country + i);
+                    if (input) {
+                        const targetValue = parseInt(input.value) || 0;
+                        const key = (data.currentYear + 1) + '-' + i;
+                        data.countries[country].targetsByYearMonth[key] = targetValue;
+                    }
+                }
+            });
+
+            return data;
+        }
+
+        function calculateRequirements(data) {
+            const results = {};
+            const currentMonth = data.currentMonth;
+            const currentYear = data.currentYear;
+
+            APP_CONFIG.countries.forEach(country => {
+                results[country] = {
+                    monthly: []
+                };
+
+                const countryData = data.countries[country];
+                
+                // Calculate for 12 months starting from current month
+                for (let i = 0; i < 12; i++) {
+                    const monthIndex = (currentMonth + i) % 12;
+                    const yearOffset = Math.floor((currentMonth + i) / 12);
+                    const actualYear = currentYear + yearOffset;
+                    
+                    // Get the target for the specific year and month
+                    const targetKey = actualYear + '-' + monthIndex;
+                    const dealTarget = countryData.targetsByYearMonth[targetKey] || 0;
+                    
+                    const requiredOpps = Math.ceil(dealTarget / countryData.meetingToWinRate);
+                    const requiredLeads = Math.ceil(requiredOpps / countryData.leadToOppRate);
+                    const sdrNeeded = Math.ceil(requiredOpps / countryData.sdrQuota);
+                    const aeNeeded = Math.ceil(dealTarget / countryData.aeQuota);
+
+                    results[country].monthly.push({
+                        dealTarget,
+                        requiredOpps,
+                        requiredLeads,
+                        sdrNeeded,
+                        aeNeeded,
+                        totalHeadcount: sdrNeeded + aeNeeded,
+                        arr: dealTarget * countryData.arrPerDeal
+                    });
+                }
+            });
+
+            return results;
+        }
+
+        function calculateHeadcountWithRamp(projections, data) {
+            const plan = {};
+
+            APP_CONFIG.countries.forEach(country => {
+                const countryData = data.countries[country];
+                plan[country] = {
+                    sdr: calculateRoleHeadcount(
+                        'sdr', 
+                        projections[country], 
+                        countryData.attritionRate, 
+                        countryData.rampFactors, 
+                        countryData.currentSC
+                    ),
+                    ae: calculateRoleHeadcount(
+                        'ae', 
+                        projections[country], 
+                        countryData.attritionRate, 
+                        countryData.rampFactors, 
+                        countryData.currentBC
+                    )
+                };
+            });
+
+            return plan;
+        }
+
+        function calculateRoleHeadcount(role, countryProjections, attritionRate, rampFactors, currentHeadcount) {
+            const roleKey = role + 'Needed';
+            const months = countryProjections.monthly.map(m => m[roleKey]);
+            
+            const result = {
+                required: months,
+                productive: new Array(12).fill(0),
+                ramping: new Array(12).fill(0),
+                newHires: new Array(12).fill(0),
+                attrition: new Array(12).fill(0),
+                total: new Array(12).fill(0)
+            };
+
+            // Initialize with current headcount
+            result.productive[0] = currentHeadcount;
+
+            // Calculate month by month
+            for (let month = 0; month < 12; month++) {
+                const required = months[month];
+                
+                // Calculate productive headcount
+                if (month > 0) {
+                    result.productive[month] = 
+                        (result.productive[month - 1] + result.ramping[month - 1]) * 
+                        (1 - attritionRate);
+                }
+
+                // Calculate ramping headcount
+                let rampingCapacity = 0;
+                for (let i = 1; i < rampFactors.length && month - i >= 0; i++) {
+                    rampingCapacity += 
+                        result.newHires[month - i] * 
+                        rampFactors[i] * 
+                        Math.pow(1 - attritionRate, i);
+                }
+                result.ramping[month] = rampingCapacity;
+
+                // Calculate effective capacity
+                const effectiveCapacity = result.productive[month] + result.ramping[month];
+
+                // Calculate new hires needed
+                if (effectiveCapacity < required) {
+                    const avgRampFactor = rampFactors.reduce((a, b) => a + b) / rampFactors.length;
+                    result.newHires[month] = Math.ceil((required - effectiveCapacity) / avgRampFactor);
+                } else {
+                    result.newHires[month] = 0;
+                }
+
+                // Calculate total headcount
+                result.total[month] = 
+                    result.productive[month] + 
+                    result.ramping[month] + 
+                    result.newHires[month];
+                
+                // Calculate attrition
+                result.attrition[month] = result.total[month] * attritionRate;
+            }
+
+            return result;
+        }
+
+        function displayResults(projections, headcountPlan, data) {
+            displaySummaryMetrics(projections, headcountPlan, data);
+            displayMonthlyRequirements(projections);
+            displayHeadcountPlan(headcountPlan);
+            displayHiringSchedule(headcountPlan);
+            displayRequisitionTimeline(headcountPlan, data);
+        }
+
+        function displaySummaryMetrics(projections, headcountPlan, data) {
+            const container = document.getElementById('summaryMetrics');
+            container.innerHTML = '';
+
+            // Country-specific cards
+            APP_CONFIG.countries.forEach(country => {
+                const countryDeals = projections[country].monthly.reduce((sum, m) => sum + m.dealTarget, 0);
+                const countryARR = projections[country].monthly.reduce((sum, m) => sum + m.arr, 0);
+                const maxSDR = Math.max(...headcountPlan[country].sdr.total);
+                const maxAE = Math.max(...headcountPlan[country].ae.total);
+
+                const card = document.createElement('div');
+                card.className = 'metric-card';
+                card.innerHTML = 
+                    '<div class="metric-label">' + APP_CONFIG.countryFlags[country] + ' ' + APP_CONFIG.countryNames[country] + '</div>' +
+                    '<div style="font-size: 18px; margin: 10px 0;">' +
+                    '<div>Deals: ' + countryDeals.toLocaleString() + '</div>' +
+                    '<div>ARR: $' + (countryARR / 1000000).toFixed(1) + 'M</div>' +
+                    '<div>Peak HC: ' + (Math.ceil(maxSDR) + Math.ceil(maxAE)) + '</div>' +
+                    '</div>';
+                container.appendChild(card);
+            });
+
+            // Total metrics
+            let totalDeals = 0;
+            let totalARR = 0;
+            let totalSC = 0;
+            let totalBC = 0;
+
+            APP_CONFIG.countries.forEach(country => {
+                const countryDeals = projections[country].monthly.reduce((sum, m) => sum + m.dealTarget, 0);
+                const countryARR = projections[country].monthly.reduce((sum, m) => sum + m.arr, 0);
+                const maxSC = Math.max(...headcountPlan[country].sdr.total);
+                const maxBC = Math.max(...headcountPlan[country].ae.total);
+
+                totalDeals += countryDeals;
+                totalARR += countryARR;
+                totalSC += maxSC;
+                totalBC += maxBC;
+            });
+
+            const totalCard = document.createElement('div');
+            totalCard.className = 'metric-card';
+            totalCard.style.gridColumn = 'span 2';
+            totalCard.innerHTML = 
+                '<div class="metric-label">Total All Countries</div>' +
+                '<div class="metric-value">' + (Math.ceil(totalSC) + Math.ceil(totalBC)) + '</div>' +
+                '<div style="font-size: 16px;">' +
+                totalDeals.toLocaleString() + ' deals | $' + (totalARR / 1000000).toFixed(1) + 'M ARR | ' +
+                Math.ceil(totalSC) + ' SC | ' + Math.ceil(totalBC) + ' BC' +
+                '</div>';
+            container.appendChild(totalCard);
+        }
+
+        function displayMonthlyRequirements(projections) {
+            const table = document.getElementById('monthlyRequirements');
+            const monthLabels = getMonthLabels();
+            let html = '<thead><tr><th>Country</th><th>Metric</th>';
+            monthLabels.forEach(label => html += '<th>' + label + '</th>');
+            html += '</tr></thead><tbody>';
+
+            APP_CONFIG.countries.forEach(country => {
+                const metrics = [
+                    { name: 'Deal Targets', key: 'dealTarget' },
+                    { name: 'Required Opportunities', key: 'requiredOpps' },
+                    { name: 'Required Leads', key: 'requiredLeads' },
+                    { name: 'SC Needed', key: 'sdrNeeded' },
+                    { name: 'BC Needed', key: 'aeNeeded' }
+                ];
+
+                metrics.forEach((metric, index) => {
+                    html += '<tr>';
+                    if (index === 0) {
+                        html += '<td rowspan="5" class="country-header">' + 
+                            APP_CONFIG.countryFlags[country] + ' ' + 
+                            APP_CONFIG.countryNames[country] + '</td>';
+                    }
+                    html += '<td>' + metric.name + '</td>';
+                    projections[country].monthly.forEach(month => {
+                        html += '<td>' + month[metric.key] + '</td>';
+                    });
+                    html += '</tr>';
+                });
+            });
+
+            html += '</tbody>';
+            table.innerHTML = html;
+        }
+
+        function displayHeadcountPlan(headcountPlan) {
+            const table = document.getElementById('headcountPlan');
+            const monthLabels = getMonthLabels();
+            let html = '<thead><tr><th>Country</th><th>Role</th><th>Metric</th>';
+            monthLabels.forEach(label => html += '<th>' + label + '</th>');
+            html += '</tr></thead><tbody>';
+
+            APP_CONFIG.countries.forEach(country => {
+                ['sdr', 'ae'].forEach((role, roleIndex) => {
+                    const metrics = [
+                        { name: 'Required', key: 'required' },
+                        { name: 'Productive', key: 'productive' },
+                        { name: 'Ramping', key: 'ramping' },
+                        { name: 'Total Headcount', key: 'total' }
+                    ];
+
+                    metrics.forEach((metric, index) => {
+                        html += '<tr>';
+                        if (roleIndex === 0 && index === 0) {
+                            html += '<td rowspan="8" class="country-header">' + 
+                                APP_CONFIG.countryFlags[country] + ' ' + 
+                                APP_CONFIG.countryNames[country] + '</td>';
+                        }
+                        if (index === 0) {
+                            html += '<td rowspan="4">' + (role.toUpperCase() === 'SDR' ? 'SC' : 'BC') + '</td>';
+                        }
+                        html += '<td>' + metric.name + '</td>';
+                        
+                        headcountPlan[country][role][metric.key].forEach(value => {
+                            const formatted = metric.key === 'productive' || metric.key === 'ramping' ? 
+                                value.toFixed(1) : Math.round(value);
+                            html += '<td>' + formatted + '</td>';
+                        });
+                        html += '</tr>';
+                    });
+                });
+            });
+
+            html += '</tbody>';
+            table.innerHTML = html;
+        }
+
+        function displayHiringSchedule(headcountPlan) {
+            const table = document.getElementById('hiringSchedule');
+            const monthLabels = getMonthLabels();
+            let html = '<thead><tr><th>Country</th><th>Role</th>';
+            monthLabels.forEach(label => html += '<th>' + label + '</th>');
+            html += '<th>Total Hires</th></tr></thead><tbody>';
+
+            APP_CONFIG.countries.forEach(country => {
+                ['sdr', 'ae'].forEach(role => {
+                    html += '<tr>';
+                    html += '<td>' + APP_CONFIG.countryFlags[country] + ' ' + APP_CONFIG.countryNames[country] + '</td>';
+                    html += '<td>' + (role.toUpperCase() === 'SDR' ? 'SC' : 'BC') + '</td>';
+                    
+                    let totalHires = 0;
+                    headcountPlan[country][role].newHires.forEach(hires => {
+                        totalHires += hires;
+                        html += '<td style="background-color: ' + (hires > 0 ? '#e8f5e9' : '') + '">' + hires + '</td>';
+                    });
+                    html += '<td class="total-row">' + totalHires + '</td>';
+                    html += '</tr>';
+                });
+            });
+
+            // Add total row
+            html += '<tr class="total-row"><td colspan="2">Total New Hires</td>';
+            let grandTotal = 0;
+            monthLabels.forEach((label, index) => {
+                let monthTotal = 0;
+                APP_CONFIG.countries.forEach(country => {
+                    monthTotal += headcountPlan[country].sdr.newHires[index];
+                    monthTotal += headcountPlan[country].ae.newHires[index];
+                });
+                grandTotal += monthTotal;
+                html += '<td>' + monthTotal + '</td>';
+            });
+            html += '<td>' + grandTotal + '</td></tr>';
+
+            html += '</tbody>';
+            table.innerHTML = html;
+        }
+
+        function displayRequisitionTimeline(headcountPlan, data) {
+            const table = document.getElementById('requisitionTimeline');
+            const monthLabels = getMonthLabels();
+            const currentMonth = parseInt(document.getElementById('currentMonth').value);
+            const currentYear = parseInt(document.getElementById('currentYear').value);
+            
+            let html = '<thead><tr><th>Country</th><th>Role</th><th>Lead Time</th>';
+            monthLabels.forEach(label => html += '<th>' + label + '</th>');
+            html += '</tr></thead><tbody>';
+
+            APP_CONFIG.countries.forEach(country => {
+                const hiringLeadTime = data.countries[country].hiringLeadTime;
+                const leadTimeMonths = Math.ceil(hiringLeadTime / 30);
+                
+                ['sdr', 'ae'].forEach(role => {
+                    html += '<tr>';
+                    html += '<td>' + APP_CONFIG.countryFlags[country] + ' ' + APP_CONFIG.countryNames[country] + '</td>';
+                    html += '<td>' + (role.toUpperCase() === 'SDR' ? 'SC' : 'BC') + '</td>';
+                    html += '<td>' + hiringLeadTime + ' days</td>';
+                    
+                    headcountPlan[country][role].newHires.forEach((hires, monthIndex) => {
+                        if (hires > 0) {
+                            const submitMonthIndex = monthIndex - leadTimeMonths;
+                            if (submitMonthIndex >= 0) {
+                                html += '<td style="background-color: #fff3cd;">Submit ' + hires + ' req</td>';
+                            } else {
+                                const actualMonth = currentMonth + submitMonthIndex;
+                                const monthName = actualMonth >= 0 ? 
+                                    APP_CONFIG.months[actualMonth % 12] : 
+                                    APP_CONFIG.months[(12 + actualMonth % 12) % 12];
+                                const yearOffset = Math.floor((currentMonth + submitMonthIndex) / 12);
+                                const submitYear = currentYear + yearOffset;
+                                html += '<td style="background-color: #ffebee;">Submit ' + hires + ' req in ' + monthName + ' ' + submitYear + '</td>';
+                            }
+                        } else {
+                            html += '<td>-</td>';
+                        }
+                    });
+                    html += '</tr>';
+                });
+            });
+
+            html += '</tbody><tfoot><tr><td colspan="15" style="text-align: left; padding-top: 20px;">';
+            html += '<strong>Legend:</strong> ';
+            html += '<span style="background-color: #fff3cd; padding: 2px 8px; margin-right: 10px;">Submit requisition this month</span>';
+            html += '<span style="background-color: #ffebee; padding: 2px 8px;">Submit requisition before planning period</span>';
+            html += '</td></tr></tfoot>';
+
+            table.innerHTML = html;
+        }
+    </script>
+</body>
+</html>
